@@ -75,3 +75,60 @@ REFRESH_TOKEN_SECRET=your_strong_refresh_secret_here
 ```
 npm run dev  # Uses nodemon for auto-restart
 ```
+## Security Notes
+
+There are some key steps you can take to make sure everything is secure:
+
+### **1. Separate secrets**
+Use a different secret for access and refresh tokens.  
+If the access secret leaks, refresh tokens still use a different key.  
+Set `JWT_SECRET` and `REFRESH_TOKEN_SECRET` in `.env`.
+
+---
+
+### **2. HTTPS only**
+Serve production traffic over HTTPS.  
+Cookies marked `secure: true` only travel over HTTPS — this protects tokens in transit.
+
+---
+
+### **3. Rotate on every refresh**
+Issue a new refresh token and revoke the old one every time you refresh.  
+Rotation makes a stolen old token useless after the next refresh.
+
+---
+
+### **4. Hash refresh tokens in the database**
+Store a **SHA-256 hash**, not the raw token.  
+This way a database leak does not expose the actual token.
+
+---
+
+### **5. Scope and flags for cookies**
+Use the following cookie flags:
+- `httpOnly: true`
+- `secure: true` (in production)
+- `sameSite: 'strict'`
+- limit cookie path (e.g., `/api/auth/refresh`)
+
+These reduce XSS/CSRF risks and limit where the cookie is sent.
+
+---
+
+### **6. Short access TTL and moderate refresh TTL**
+- Access token: **~15 minutes**
+- Refresh token: **~7 days**
+
+This keeps security high without annoying users.
+
+---
+
+### **7. Device awareness**
+Store `ip` and `userAgent`.  
+If patterns change suspiciously, revoke or challenge the session.
+
+---
+
+### **8. Auditing and limits**
+Log refresh events and apply rate limits on the refresh endpoint.  
+This helps detect abuse.
